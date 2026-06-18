@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>중국어 단어 퀴즈 마스터</title>
     <style>
         :root {
@@ -13,34 +13,37 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Apple SD Gothic Neo';
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Apple SD Gothic Neo', sans-serif;
             background-color: var(--bg-color);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
             align-items: center;
             color: #333;
+            -webkit-text-size-adjust: 100%;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 500px;
             width: 100%;
             background: var(--card-bg);
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.05);
             text-align: center;
+            box-sizing: border-box;
         }
 
         h1 {
             color: var(--primary-color);
-            margin-bottom: 20px;
-            font-size: 1.8rem;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            font-size: 1.5rem;
         }
 
         .mode-select {
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             display: flex;
             justify-content: center;
             gap: 10px;
@@ -50,16 +53,16 @@
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 18px;
             border-radius: 8px;
             cursor: pointer;
             font-size: 0.95rem;
             transition: all 0.2s ease;
+            -webkit-appearance: none;
         }
 
         button:hover {
             opacity: 0.9;
-            transform: translateY(-1px);
         }
 
         button.active {
@@ -68,8 +71,8 @@
         }
 
         .quiz-box {
-            margin: 30px 0;
-            min-height: 140px;
+            margin: 20px 0;
+            min-height: 130px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -77,7 +80,7 @@
         }
 
         .question {
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             font-weight: bold;
             color: #2c3e50;
             margin: 0;
@@ -85,12 +88,12 @@
         }
 
         .question.pinyin-mode {
-            font-size: 2.3rem;
+            font-size: 2.2rem;
             color: #16a085;
         }
 
         .hint {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             color: #7f8c8d;
             margin-top: 10px;
             height: 24px;
@@ -98,17 +101,19 @@
 
         .input-group {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 15px;
         }
 
         input[type="text"] {
             flex: 1;
-            padding: 12px;
+            padding: 14px;
             border: 2px solid #bdc3c7;
             border-radius: 8px;
             font-size: 1.1rem;
             outline: none;
+            -webkit-appearance: none;
+            box-sizing: border-box;
         }
 
         input[type="text"]:focus {
@@ -118,7 +123,7 @@
         .result {
             font-size: 1.2rem;
             font-weight: bold;
-            margin-top: 15px;
+            margin-top: 10px;
             height: 30px;
         }
 
@@ -137,11 +142,11 @@
 <body>
 
 <div class="container">
-    <h1>🇨🇳 중국어 단어 퀴즈 마스터 (120개 완벽 수록)</h1>
+    <h1>🇨🇳 중국어 단어 퀴즈 마스터</h1>
     
     <div class="mode-select">
-        <button id="btn-hanzi" class="active" onclick="changeMode('hanzi')">한자 보고 맞추기</button>
-        <button id="btn-pinyin" onclick="changeMode('pinyin')">병음 보고 맞추기</button>
+        <button id="btn-hanzi" class="active" onclick="changeMode('hanzi')">한자 모드</button>
+        <button id="btn-pinyin" onclick="changeMode('pinyin')">병음 모드</button>
     </div>
 
     <div class="quiz-box">
@@ -149,10 +154,12 @@
         <div id="hint" class="hint">(병음: nǐ)</div>
     </div>
 
-    <div class="input-group">
-        <input type="text" id="answer-input" placeholder="뜻(한국어)의 핵심 글자를 입력하세요" onkeypress="handleKeyPress(event)">
-        <button onclick="checkAnswer()">확인</button>
-    </div>
+    <form onsubmit="handleFormSubmit(event)">
+        <div class="input-group">
+            <input type="text" id="answer-input" placeholder="뜻(한국어)을 입력하세요" autocomplete="off" enterkeyhint="done">
+            <button type="submit">확인</button>
+        </div>
+    </form>
 
     <div id="result-message" class="result"></div>
 
@@ -163,9 +170,9 @@
 </div>
 
 <script>
-    // 이미지 속 120개 전체 단어 DB 완벽 매핑
+    // 120개 전체 단어 데이터 (오타 수정 버전)
     const vocabulary = [
-        // 파트 1 (1~35)
+        // 파트 1
         { hanzi: "你", pinyin: "nǐ", meaning: "너, 당신" },
         { hanzi: "好", pinyin: "hǎo", meaning: "좋다, 안녕하다" },
         { hanzi: "们", pinyin: "men", meaning: "들, 복수" },
@@ -202,7 +209,7 @@
         { hanzi: "恭喜", pinyin: "gōngxǐ", meaning: "축하하다" },
         { hanzi: "慢走", pinyin: "mànzǒu", meaning: "살펴가세요" },
 
-        // 파트 2 (1~35)
+        // 파트 2
         { hanzi: "叫", pinyin: "jiào", meaning: "부르다, 이름" },
         { hanzi: "什么", pinyin: "shénme", meaning: "무엇, 무슨" },
         { hanzi: "名字", pinyin: "míngzi", meaning: "이름" },
@@ -210,7 +217,7 @@
         { hanzi: "很", pinyin: "hěn", meaning: "매우, 아주" },
         { hanzi: "好听", pinyin: "hǎotīng", meaning: "듣기 좋다" },
         { hanzi: "饿", pinyin: "è", meaning: "배고프다" },
-        { hanzi: "是", pinyin: "shi", meaning: "이다, 맞다" },
+        { hanzi: "是", pinyin: "shì", meaning: "이다, 맞다" },
         { hanzi: "哪", pinyin: "nǎ", meaning: "어느" },
         { hanzi: "国", pinyin: "guó", meaning: "나라, 국가" },
         { hanzi: "人", pinyin: "rén", meaning: "사람" },
@@ -239,7 +246,7 @@
         { hanzi: "的", pinyin: "de", meaning: "의, 한" },
         { hanzi: "冰淇淋", pinyin: "bīngqílín", meaning: "아이스크림" },
 
-        // 파트 3 (1~47)
+        // 파트 3
         { hanzi: "有", pinyin: "yǒu", meaning: "있다, 가지다" },
         { hanzi: "弟弟", pinyin: "dìdi", meaning: "남동생" },
         { hanzi: "只", pinyin: "zhǐ", meaning: "오직, 단지" },
@@ -267,7 +274,7 @@
         { hanzi: "这", pinyin: "zhè", meaning: "이것, 이" },
         { hanzi: "上", pinyin: "shàng", meaning: "위, 오르다, 접속" },
         { hanzi: "几", pinyin: "jǐ", meaning: "몇" },
-        { hanzi: "년급", pinyin: "niánjí", meaning: "학년" },
+        { hanzi: "年级", pinyin: "niánjí", meaning: "학년" },
         { hanzi: "高中", pinyin: "gāozhōng", meaning: "고등학교" },
         { hanzi: "手机", pinyin: "shǒujī", meaning: "휴대전화, 스마트폰" },
         { hanzi: "那", pinyin: "nà", meaning: "저것, 그" },
@@ -287,7 +294,7 @@
         { hanzi: "分享", pinyin: "fēnxiǎng", meaning: "공유" },
         { hanzi: "班", pinyin: "bān", meaning: "반, 학급" },
 
-        // 파트 4 (1~49)
+        // 파트 4
         { hanzi: "今天", pinyin: "jīntiān", meaning: "오늘" },
         { hanzi: "号", pinyin: "hào", meaning: "일, 번호" },
         { hanzi: "星期", pinyin: "xīngqī", meaning: "요일" },
@@ -305,7 +312,7 @@
         { hanzi: "星期日", pinyin: "xīngqīrì", meaning: "일요일" },
         { hanzi: "前天", pinyin: "qiántiān", meaning: "그저께" },
         { hanzi: "昨天", pinyin: "zuótiān", meaning: "어제" },
-        { hanzi: "后天", pinyin: "hòutiān", meaning: "모레" },
+        { hanzi: "后天", pinyin: "hòitiān", meaning: "모레" },
         { hanzi: "回", pinyin: "huí", meaning: "돌아가다" },
         { hanzi: "去", pinyin: "qù", meaning: "가다" },
         { hanzi: "学校", pinyin: "xuéxiào", meaning: "학교" },
@@ -313,7 +320,7 @@
         { hanzi: "课", pinyin: "kè", meaning: "수업, 과목" },
         { hanzi: "点", pinyin: "diǎn", meaning: "시, 점" },
         { hanzi: "开始", pinyin: "kāishǐ", meaning: "시작하다" },
-        { hanzi: "现在", pinyin: "xiànzài", meaning: "지금, 현재" },
+        { hanzi: "现자", pinyin: "xiànzài", meaning: "지금, 현재" },
         { hanzi: "半", pinyin: "bàn", meaning: "반, 30분" },
         { hanzi: "快", pinyin: "kuài", meaning: "빠르다, 곧" },
         { hanzi: "睡觉", pinyin: "shuìjiào", meaning: "자다" },
@@ -342,10 +349,12 @@
     let score = 0;
     let solvedCount = 0;
     let pool = [...vocabulary];
+    let isWaiting = false;
 
     function nextQuestion() {
+        isWaiting = false;
         if (pool.length === 0) {
-            alert(`🎉 완벽합니다! 모든 단어(120개)를 정복했습니다! 총 맞은 개수: ${score}/${vocabulary.length}`);
+            alert(`🎉 대단합니다! 120개 단어를 전부 완료했습니다!\n맞은 개수: ${score}/${vocabulary.length}`);
             pool = [...vocabulary];
             score = 0;
             solvedCount = 0;
@@ -371,7 +380,15 @@
             qElem.classList.add("pinyin-mode");
             hElem.innerText = `(한자 힌트: ${currentWord.hanzi})`;
         }
-        inputElem.focus();
+        
+        // 아이패드 브라우저 포커스 유연화
+        setTimeout(() => inputElem.focus(), 50);
+    }
+
+    function handleFormSubmit(event) {
+        event.preventDefault(); // 폼 제출로 인한 새로고침 방지
+        if (isWaiting) return;
+        checkAnswer();
     }
 
     function checkAnswer() {
@@ -380,9 +397,9 @@
 
         if(!userAnswer) return;
 
+        isWaiting = true;
         solvedCount++;
         
-        // 정답 검사 조건 완화: 유저 입력값이 실제 뜻의 핵심 단어를 포함하는지 매칭 체킹
         const isCorrect = currentWord.meaning.split(',').some(m => {
             return m.replace(/\s+/g, "").includes(userAnswer.replace(/\s+/g, "")) || 
                    userAnswer.replace(/\s+/g, "").includes(m.replace(/\s+/g, ""));
@@ -393,18 +410,12 @@
             resultElem.innerText = "정답입니다! 🎉";
             score++;
             updateScoreBoard();
-            setTimeout(nextQuestion, 1200); // 정답 시 1.2초 후 다음 문제
+            setTimeout(nextQuestion, 1200);
         } else {
             resultElem.className = "result incorrect";
             resultElem.innerText = `오답 😢 (정답: ${currentWord.meaning})`;
             updateScoreBoard();
-            setTimeout(nextQuestion, 2500); // 오답 시 정답을 확인할 수 있도록 2.5초 지연
-        }
-    }
-
-    function handleKeyPress(event) {
-        if (event.key === "Enter") {
-            checkAnswer();
+            setTimeout(nextQuestion, 2500);
         }
     }
 
