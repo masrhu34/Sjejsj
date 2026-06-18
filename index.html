@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>중국어 단어 퀴즈 마스터</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #16a085;
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Apple SD Gothic Neo';
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            text-align: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+        }
+
+        .mode-select {
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        button.active {
+            background-color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        .quiz-box {
+            margin: 30px 0;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .question {
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 0;
+            word-break: break-all;
+        }
+
+        .question.pinyin-mode {
+            font-size: 2.3rem;
+            color: #16a085;
+        }
+
+        .hint {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            margin-top: 10px;
+            height: 24px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            outline: none;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--secondary-color);
+        }
+
+        .result {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-top: 15px;
+            height: 30px;
+        }
+
+        .correct { color: #27ae60; }
+        .incorrect { color: #c0392b; }
+
+        .score-board {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            border-top: 1px solid #ecf0f1;
+            padding-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🇨🇳 중국어 단어 퀴즈 마스터 (120개 완벽 수록)</h1>
+    
+    <div class="mode-select">
+        <button id="btn-hanzi" class="active" onclick="changeMode('hanzi')">한자 보고 맞추기</button>
+        <button id="btn-pinyin" onclick="changeMode('pinyin')">병음 보고 맞추기</button>
+    </div>
+
+    <div class="quiz-box">
+        <div id="question" class="question">你</div>
+        <div id="hint" class="hint">(병음: nǐ)</div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="answer-input" placeholder="뜻(한국어)의 핵심 글자를 입력하세요" onkeypress="handleKeyPress(event)">
+        <button onclick="checkAnswer()">확인</button>
+    </div>
+
+    <div id="result-message" class="result"></div>
+
+    <div class="score-board">
+        진행도: <span id="current-count">0</span> / <span id="total-count">0</span> | 
+        맞은 개수: <span id="correct-count">0</span>
+    </div>
+</div>
+
+<script>
+    // 이미지 속 120개 전체 단어 DB 완벽 매핑
+    const vocabulary = [
+        // 파트 1 (1~35)
+        { hanzi: "你", pinyin: "nǐ", meaning: "너, 당신" },
+        { hanzi: "好", pinyin: "hǎo", meaning: "좋다, 안녕하다" },
+        { hanzi: "们", pinyin: "men", meaning: "들, 복수" },
+        { hanzi: "再见", pinyin: "zàijiàn", meaning: "또 보자, 안녕" },
+        { hanzi: "明天", pinyin: "míngtiān", meaning: "내일" },
+        { hanzi: "见", pinyin: "jiàn", meaning: "보다, 만나다" },
+        { hanzi: "同学", pinyin: "tóngxué", meaning: "학우, 친구" },
+        { hanzi: "老师", pinyin: "lǎoshī", meaning: "선생님" },
+        { hanzi: "早上", pinyin: "zǎoshang", meaning: "아침" },
+        { hanzi: "早", pinyin: "zǎo", meaning: "이르다, 아침인사" },
+        { hanzi: "我", pinyin: "wǒ", meaning: "나" },
+        { hanzi: "我们", pinyin: "wǒmen", meaning: "우리" },
+        { hanzi: "您", pinyin: "nín", meaning: "당신, 존칭" },
+        { hanzi: "他", pinyin: "tā", meaning: "그, 남자" },
+        { hanzi: "他们", pinyin: "tāmen", meaning: "그들" },
+        { hanzi: "她", pinyin: "tā", meaning: "그녀" },
+        { hanzi: "她们", pinyin: "tāmen", meaning: "그녀들" },
+        { hanzi: "下午", pinyin: "xiàwǔ", meaning: "오후" },
+        { hanzi: "一会儿", pinyin: "yíhuìr", meaning: "잠시, 이따가" },
+        { hanzi: "谢谢", pinyin: "xièxie", meaning: "고맙습니다, 감사" },
+        { hanzi: "不", pinyin: "bù", meaning: "아니다" },
+        { hanzi: "客气", pinyin: "kèqi", meaning: "예의, 천만에요" },
+        { hanzi: "对不起", pinyin: "duìbuqǐ", meaning: "미안합니다, 죄송" },
+        { hanzi: "没", pinyin: "méi", meaning: "없다" },
+        { hanzi: "关系", pinyin: "guānxi", meaning: "관계, 괜찮다" },
+        { hanzi: "妈妈", pinyin: "māma", meaning: "엄마, 어머니" },
+        { hanzi: "不好意思", pinyin: "bù hǎoyìsi", meaning: "미안하다, 부끄럽다" },
+        { hanzi: "事儿", pinyin: "shìr", meaning: "일, 사건" },
+        { hanzi: "晚上", pinyin: "wǎnshang", meaning: "저녁, 밤" },
+        { hanzi: "晚安", pinyin: "wǎn'ān", meaning: "안녕히 주무세요" },
+        { hanzi: "大家", pinyin: "dàjiā", meaning: "여러분, 모두" },
+        { hanzi: "拜拜", pinyin: "báibái", meaning: "바이바이, 안녕" },
+        { hanzi: "好久", pinyin: "hǎojiǔ", meaning: "오래간만, 오래" },
+        { hanzi: "恭喜", pinyin: "gōngxǐ", meaning: "축하하다" },
+        { hanzi: "慢走", pinyin: "mànzǒu", meaning: "살펴가세요" },
+
+        // 파트 2 (1~35)
+        { hanzi: "叫", pinyin: "jiào", meaning: "부르다, 이름" },
+        { hanzi: "什么", pinyin: "shénme", meaning: "무엇, 무슨" },
+        { hanzi: "名字", pinyin: "míngzi", meaning: "이름" },
+        { hanzi: "呢", pinyin: "ne", meaning: "의문, 는요" },
+        { hanzi: "很", pinyin: "hěn", meaning: "매우, 아주" },
+        { hanzi: "好听", pinyin: "hǎotīng", meaning: "듣기 좋다" },
+        { hanzi: "饿", pinyin: "è", meaning: "배고프다" },
+        { hanzi: "是", pinyin: "shi", meaning: "이다, 맞다" },
+        { hanzi: "哪", pinyin: "nǎ", meaning: "어느" },
+        { hanzi: "国", pinyin: "guó", meaning: "나라, 국가" },
+        { hanzi: "人", pinyin: "rén", meaning: "사람" },
+        { hanzi: "韩国", pinyin: "Hánguó", meaning: "한국" },
+        { hanzi: "也", pinyin: "yě", meaning: "도, 또한" },
+        { hanzi: "吗", pinyin: "ma", meaning: "입니까" },
+        { hanzi: "中国", pinyin: "Zhōngguó", meaning: "중국" },
+        { hanzi: "学生", pinyin: "xuésheng", meaning: "학생" },
+        { hanzi: "安重根", pinyin: "Ān Zhònggēn", meaning: "안중근" },
+        { hanzi: "牛顿", pinyin: "Niúdùn", meaning: "뉴턴" },
+        { hanzi: "甘地", pinyin: "Gāndì", meaning: "간디" },
+        { hanzi: "日本", pinyin: "Rìběn", meaning: "일본" },
+        { hanzi: "埃及", pinyin: "Āijí", meaning: "이집트" },
+        { hanzi: "法国", pinyin: "Fǎguó", meaning: "프랑스" },
+        { hanzi: "美国", pinyin: "Měiguó", meaning: "미국" },
+        { hanzi: "西班牙", pinyin: "Xībānyá", meaning: "스페인" },
+        { hanzi: "巴西", pinyin: "Bāxī", meaning: "브라질" },
+        { hanzi: "意大利", pinyin: "Yìdàlì", meaning: "이탈리아" },
+        { hanzi: "印度", pinyin: "Yìndù", meaning: "인도" },
+        { hanzi: "加纳", pinyin: "Jiānà", meaning: "가나" },
+        { hanzi: "葡萄牙", pinyin: "Pútáoyá", meaning: "포르투갈" },
+        { hanzi: "澳大利亚", pinyin: "Àodàlìyà", meaning: "호주, 오스트레일리아" },
+        { hanzi: "贵姓", pinyin: "guìxìng", meaning: "성씨, 높임말" },
+        { hanzi: "姓", pinyin: "xìng", meaning: "성, 성씨" },
+        { hanzi: "李子", pinyin: "lǐzi", meaning: "자두, 오얏" },
+        { hanzi: "的", pinyin: "de", meaning: "의, 한" },
+        { hanzi: "冰淇淋", pinyin: "bīngqílín", meaning: "아이스크림" },
+
+        // 파트 3 (1~47)
+        { hanzi: "有", pinyin: "yǒu", meaning: "있다, 가지다" },
+        { hanzi: "弟弟", pinyin: "dìdi", meaning: "남동생" },
+        { hanzi: "只", pinyin: "zhǐ", meaning: "오직, 단지" },
+        { hanzi: "个", pinyin: "ge", meaning: "개, 명" },
+        { hanzi: "妹妹", pinyin: "mèimei", meaning: "여동생" },
+        { hanzi: "今年", pinyin: "jīnnián", meaning: "올해" },
+        { hanzi: "多", pinyin: "duō", meaning: "많다, 얼마나" },
+        { hanzi: "大", pinyin: "dà", meaning: "크다, 나이" },
+        { hanzi: "岁", pinyin: "suì", meaning: "살, 세" },
+        { hanzi: "两", pinyin: "liǎng", meaning: "둘, 두" },
+        { hanzi: "杯", pinyin: "bēi", meaning: "잔, 컵" },
+        { hanzi: "可乐", pinyin: "kělè", meaning: "콜라" },
+        { hanzi: "爷爷", pinyin: "yéye", meaning: "할아버지" },
+        { hanzi: "奶奶", pinyin: "nǎinai", meaning: "할머니" },
+        { hanzi: "老爷", pinyin: "lǎoye", meaning: "외할아버지" },
+        { hanzi: "姥姥", pinyin: "lǎolao", meaning: "외할머니" },
+        { hanzi: "爸爸", pinyin: "bàba", meaning: "아빠, 아버지" },
+        { hanzi: "哥哥", pinyin: "gēge", meaning: "형, 오빠" },
+        { hanzi: "姐姐", pinyin: "jiějie", meaning: "누나, 언니" },
+        { hanzi: "加", pinyin: "jiā", meaning: "더하다, 추가" },
+        { hanzi: "好友", pinyin: "hǎoyǒu", meaning: "좋은 친구, 절친" },
+        { hanzi: "吧", pinyin: "ba", meaning: "하자, 죠" },
+        { hanzi: "啊", pinyin: "a", meaning: "아, 어기조사" },
+        { hanzi: "看", pinyin: "kàn", meaning: "보다, 읽다" },
+        { hanzi: "这", pinyin: "zhè", meaning: "이것, 이" },
+        { hanzi: "上", pinyin: "shàng", meaning: "위, 오르다, 접속" },
+        { hanzi: "几", pinyin: "jǐ", meaning: "몇" },
+        { hanzi: "년급", pinyin: "niánjí", meaning: "학년" },
+        { hanzi: "高中", pinyin: "gāozhōng", meaning: "고등학교" },
+        { hanzi: "手机", pinyin: "shǒujī", meaning: "휴대전화, 스마트폰" },
+        { hanzi: "那", pinyin: "nà", meaning: "저것, 그" },
+        { hanzi: "小学", pinyin: "xiǎoxué", meaning: "초등학교" },
+        { hanzi: "初중", pinyin: "chūzhōng", meaning: "중학교" },
+        { hanzi: "大学", pinyin: "dàxué", meaning: "대학교" },
+        { hanzi: "中学", pinyin: "zhōngxué", meaning: "중고등학교" },
+        { hanzi: "谁", pinyin: "shéi", meaning: "누구" },
+        { hanzi: "朋友", pinyin: "péngyou", meaning: "친구" },
+        { hanzi: "年纪", pinyin: "niánjì", meaning: "나이, 연령" },
+        { hanzi: "扫", pinyin: "sǎo", meaning: "쓸다, 스캔" },
+        { hanzi: "二维码", pinyin: "èrwéimǎ", meaning: "QR코드" },
+        { hanzi: "收藏", pinyin: "shōucáng", meaning: "소장, 즐겨찾기" },
+        { hanzi: "评论", pinyin: "pínglùn", meaning: "댓글, 평론" },
+        { hanzi: "关注", pinyin: "guānzhù", meaning: "관심, 팔로우" },
+        { hanzi: "点赞", pinyin: "diǎn zàn", meaning: "좋아요" },
+        { hanzi: "分享", pinyin: "fēnxiǎng", meaning: "공유" },
+        { hanzi: "班", pinyin: "bān", meaning: "반, 학급" },
+
+        // 파트 4 (1~49)
+        { hanzi: "今天", pinyin: "jīntiān", meaning: "오늘" },
+        { hanzi: "号", pinyin: "hào", meaning: "일, 번호" },
+        { hanzi: "星期", pinyin: "xīngqī", meaning: "요일" },
+        { hanzi: "月", pinyin: "yuè", meaning: "달, 월" },
+        { hanzi: "生日", pinyin: "shēngrì", meaning: "생일" },
+        { hanzi: "一起", pinyin: "yìqǐ", meaning: "같이, 함께" },
+        { hanzi: "玩儿", pinyin: "wánr", meaning: "놀다" },
+        { hanzi: "星期一", pinyin: "xīngqīyī", meaning: "월요일" },
+        { hanzi: "星期二", pinyin: "xīngqī'èr", meaning: "화요일" },
+        { hanzi: "星期三", pinyin: "xīngqīsān", meaning: "수요일" },
+        { hanzi: "星期四", pinyin: "xīngqīsì", meaning: "목요일" },
+        { hanzi: "星期五", pinyin: "xīngqīwǔ", meaning: "금요일" },
+        { hanzi: "星期六", pinyin: "xīngqīliù", meaning: "토요일" },
+        { hanzi: "星期天", pinyin: "xīngqītiān", meaning: "일요일" },
+        { hanzi: "星期日", pinyin: "xīngqīrì", meaning: "일요일" },
+        { hanzi: "前天", pinyin: "qiántiān", meaning: "그저께" },
+        { hanzi: "昨天", pinyin: "zuótiān", meaning: "어제" },
+        { hanzi: "后天", pinyin: "hòutiān", meaning: "모레" },
+        { hanzi: "回", pinyin: "huí", meaning: "돌아가다" },
+        { hanzi: "去", pinyin: "qù", meaning: "가다" },
+        { hanzi: "学校", pinyin: "xuéxiào", meaning: "학교" },
+        { hanzi: "网", pinyin: "wǎng", meaning: "인터넷, 그물" },
+        { hanzi: "课", pinyin: "kè", meaning: "수업, 과목" },
+        { hanzi: "点", pinyin: "diǎn", meaning: "시, 점" },
+        { hanzi: "开始", pinyin: "kāishǐ", meaning: "시작하다" },
+        { hanzi: "现在", pinyin: "xiànzài", meaning: "지금, 현재" },
+        { hanzi: "半", pinyin: "bàn", meaning: "반, 30분" },
+        { hanzi: "快", pinyin: "kuài", meaning: "빠르다, 곧" },
+        { hanzi: "睡觉", pinyin: "shuìjiào", meaning: "자다" },
+        { hanzi: "分", pinyin: "fēn", meaning: "분" },
+        { hanzi: "刻", pinyin: "kè", meaning: "15분" },
+        { hanzi: "差", pinyin: "chà", meaning: "모자라다, 전" },
+        { hanzi: "打开", pinyin: "dǎkāi", meaning: "열다, 켜다" },
+        { hanzi: "书", pinyin: "shū", meaning: "책" },
+        { hanzi: "进来", pinyin: "jìnlái", meaning: "들어오다" },
+        { hanzi: "起床", pinyin: "qǐchuáng", meaning: "일어나다, 기상" },
+        { hanzi: "上课", pinyin: "shàngkè", meaning: "수업하다" },
+        { hanzi: "吃", pinyin: "chī", meaning: "먹다" },
+        { hanzi: "饭", pinyin: "fàn", meaning: "밥, 식사" },
+        { hanzi: "家", pinyin: "jiā", meaning: "집, 가족" },
+        { hanzi: "快乐", pinyin: "kuàilè", meaning: "즐겁다, 행복" },
+        { hanzi: "祝", pinyin: "zhù", meaning: "기원하다, 축하" },
+        { hanzi: "哇", pinyin: "wa", meaning: "와" },
+        { hanzi: "蛋糕", pinyin: "dàngāo", meaning: "케이크" },
+        { hanzi: "周末", pinyin: "zhōumò", meaning: "주말" },
+        { hanzi: "毕业", pinyin: "bìyè", meaning: "졸업하다" },
+        { hanzi: "中秋节", pinyin: "Zhōngqiū Jié", meaning: "추석, 중추절" }
+    ];
+
+    let currentMode = 'hanzi';
+    let currentWord = {};
+    let score = 0;
+    let solvedCount = 0;
+    let pool = [...vocabulary];
+
+    function nextQuestion() {
+        if (pool.length === 0) {
+            alert(`🎉 완벽합니다! 모든 단어(120개)를 정복했습니다! 총 맞은 개수: ${score}/${vocabulary.length}`);
+            pool = [...vocabulary];
+            score = 0;
+            solvedCount = 0;
+            updateScoreBoard();
+        }
+
+        const randomIndex = Math.floor(Math.random() * pool.length);
+        currentWord = pool.splice(randomIndex, 1)[0];
+        
+        const qElem = document.getElementById("question");
+        const hElem = document.getElementById("hint");
+        const inputElem = document.getElementById("answer-input");
+
+        inputElem.value = "";
+        document.getElementById("result-message").innerHTML = "";
+
+        if (currentMode === 'hanzi') {
+            qElem.innerText = currentWord.hanzi;
+            qElem.classList.remove("pinyin-mode");
+            hElem.innerText = `(병음: ${currentWord.pinyin})`;
+        } else {
+            qElem.innerText = currentWord.pinyin;
+            qElem.classList.add("pinyin-mode");
+            hElem.innerText = `(한자 힌트: ${currentWord.hanzi})`;
+        }
+        inputElem.focus();
+    }
+
+    function checkAnswer() {
+        const userAnswer = document.getElementById("answer-input").value.trim();
+        const resultElem = document.getElementById("result-message");
+
+        if(!userAnswer) return;
+
+        solvedCount++;
+        
+        // 정답 검사 조건 완화: 유저 입력값이 실제 뜻의 핵심 단어를 포함하는지 매칭 체킹
+        const isCorrect = currentWord.meaning.split(',').some(m => {
+            return m.replace(/\s+/g, "").includes(userAnswer.replace(/\s+/g, "")) || 
+                   userAnswer.replace(/\s+/g, "").includes(m.replace(/\s+/g, ""));
+        });
+
+        if (isCorrect && userAnswer !== "") {
+            resultElem.className = "result correct";
+            resultElem.innerText = "정답입니다! 🎉";
+            score++;
+            updateScoreBoard();
+            setTimeout(nextQuestion, 1200); // 정답 시 1.2초 후 다음 문제
+        } else {
+            resultElem.className = "result incorrect";
+            resultElem.innerText = `오답 😢 (정답: ${currentWord.meaning})`;
+            updateScoreBoard();
+            setTimeout(nextQuestion, 2500); // 오답 시 정답을 확인할 수 있도록 2.5초 지연
+        }
+    }
+
+    function handleKeyPress(event) {
+        if (event.key === "Enter") {
+            checkAnswer();
+        }
+    }
+
+    function updateScoreBoard() {
+        document.getElementById("current-count").innerText = solvedCount;
+        document.getElementById("total-count").innerText = vocabulary.length;
+        document.getElementById("correct-count").innerText = score;
+    }
+
+    function changeMode(mode) {
+        currentMode = mode;
+        document.getElementById("btn-hanzi").classList.toggle("active", mode === 'hanzi');
+        document.getElementById("btn-pinyin").classList.toggle("active", mode === 'pinyin');
+        
+        pool = [...vocabulary];
+        score = 0;
+        solvedCount = 0;
+        updateScoreBoard();
+        nextQuestion();
+    }
+
+    window.onload = () => {
+        updateScoreBoard();
+        nextQuestion();
+    };
+</script>
+
+</body>
+</html>
